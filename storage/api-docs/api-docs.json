@@ -1,0 +1,78 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "L5 Swagger API",
+        "description": "L5 Swagger API description",
+        "contact": {
+            "email": "darius@matulionis.lt"
+        },
+        "version": "1.0.0"
+    },
+    "host": "homework.test",
+    "basePath": "/api/v1",
+    "schemes": [
+        "http",
+        "https"
+    ],
+    "paths": {
+        "/constructions/": {
+            "get": {
+                "tags": [
+                    "Constructions"
+                ],
+                "summary": "Get Constructions all",
+                "description": "Get Constructions by id",
+                "responses": {
+                    "200": {
+                        "description": "successful operation"
+                    },
+                    "401": {
+                        "description": "Unauthorized user"
+                    },
+                    "404": {
+                        "description": "Post is not found"
+                    }
+                }
+            }
+        },
+        "/constructions/{id}": {
+            "get": {
+                "tags": [
+                    "Constructions"
+                ],
+                "summary": "Get Constructions by id",
+                "description": "Get Constructions by id",
+                "responses": {
+                    "200": {
+                        "description": "successful operation"
+                    },
+                    "401": {
+                        "description": "Unauthorized user"
+                    },
+                    "404": {
+                        "description": "Post is not found"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Constructions"
+                ],
+                "summary": "Get Constructions by id",
+                "description": "Put Constructions by id",
+                "responses": {
+                    "200": {
+                        "description": "successful operation"
+                    },
+                    "401": {
+                        "description": "Unauthorized user"
+                    },
+                    "404": {
+                        "description": "Post is not found"
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {}
+}

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "getReleaseName" . }}
+  labels:
+    {{- include "getLabels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    {{- toYaml .Values.service.services| nindent 12 }}
+  selector:
+    {{- include "getSelectorLabels" . | nindent 4 }}

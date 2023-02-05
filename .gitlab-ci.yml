@@ -1,0 +1,21 @@
+include:
+  - local: .infra/gitlab-ci/default.yml
+  - local: .infra/gitlab-ci/workflow.yml
+  - local: .infra/gitlab-ci/before.yml
+  - local: .infra/gitlab-ci/build.yml
+  - local: .infra/gitlab-ci/test.yml
+  - local: .infra/gitlab-ci/cleanup.yml
+  - local: .infra/gitlab-ci/deploy.yml
+
+
+
+image: docker:19.03.12
+
+services:
+  - docker:19.03.12-dind
+
+stages:
+  - build
+  - test
+  - cleanup
+  - deploy

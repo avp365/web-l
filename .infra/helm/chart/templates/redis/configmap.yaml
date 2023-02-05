@@ -1,0 +1,8 @@
+{{- $releaseName := include "getReleaseName" . -}}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ $releaseName  }}-redis-config
+data:
+  launch.sh:
+    {{- toYaml .Values.redis.launchSh | nindent 12 }}

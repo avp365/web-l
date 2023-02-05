@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  test:
+    build:
+      context: ./docker/php
+      args:
+       PROJECT_IMAGE: ${PROJECT_IMAGE}
+       COMPOSER: ${COMPOSER}
+    user: 1000:1000
+    command: bash -c "php artisan migrate;php artisan db:seed;composer test"
+    environment:
+      APP_ENV: local
+      APP_KEY: base64:nfbmE3vesHXTCjtQJY2M2bXB19Dch1o5u+eSr2Hjiek=
+      DB_CONNECTION: "pgsql"
+      DB_HOST: "db"
+      DB_PORT: "5432"
+      DB_DATABASE: "db_test"
+      DB_USERNAME: "postgres"
+      DB_PASSWORD: "123456"
+    depends_on:
+      "db":
+        condition: service_healthy
+  db:
+    image: postgres:13.3
+    command: -c fsync=off -c full_page_writes=off
+    user: postgres
+    environment:
+      POSTGRES_DB: "db_test"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "123456"
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    healthcheck:
+      test: psql -U $${POSTGRES_USER} -c SELECT $${POSTGRES_DB};
+      interval: 5s
+      timeout: 5s
+      retries: 2
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G     

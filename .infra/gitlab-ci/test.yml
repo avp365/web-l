@@ -1,0 +1,12 @@
+test:
+  stage: test
+  image:
+    name: docker/compose:1.29.2
+    entrypoint: [""]
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY 
+    - cd .infra/test
+    - docker-compose -p "$CI_PROJECT_NAME"_"$CI_PIPELINE_ID"
+      up
+      --abort-on-container-exit
+      --exit-code-from test

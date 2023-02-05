@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "getRedisReadServiceName" . }}
+spec:
+  type: ClusterIP
+  ports:
+    {{- toYaml .Values.serviceRedis | nindent 12 }}
+  selector:
+     app: {{ include "getRedisPodName" . }}

@@ -1,0 +1,6 @@
+variables:
+  DOCKER_TLS_CERTDIR: "/certs"
+  HELM_VERSION: "latest"
+  COMPOSER: "composer:1.9.3"
+  HELM_IMAGE: "arrivas/helm-deployer:3.8.1"
+  PROJECT_IMAGE: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME:$CI_COMMIT_SHORT_SHA

@@ -1,0 +1,7 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ include "getReleaseName" . }}-nginx-config-map
+data:
+  nginx.conf:
+    {{- toYaml .Values.nginx.conf | nindent 12 }}

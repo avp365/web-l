@@ -1,0 +1,97 @@
+{{- $releaseName := include "getReleaseName" . -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $releaseName }}
+  labels:
+    {{- include "getLabels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.app.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "getSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "getSelectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "getServiceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: install
+          image: {{ .Values.containerPhp.image }}
+          command: [ "/bin/sh", "-c", "cp -rf  /app/. /app_share", "chmod 777 -R  /app_share/storage" ]
+          volumeMounts:
+            - name: app-shared-files
+              mountPath: /app_share/
+            - name: laravel-storage
+              mountPath: /app_share/storage
+      containers:
+        - name: {{ .Values.containerNginx.name }}
+          {{- with .Values.containerNginx.securityContext }}
+          securityContext: {{- toYaml . | nindent 8 }}
+          {{- end }}
+          image: {{ .Values.containerNginx.image }}
+          imagePullPolicy: {{ .Values.containerNginx.imagePullPolicy }}
+          ports:
+            {{- toYaml .Values.containerNginx.ports | nindent 12 }}
+          envFrom:
+            - secretRef:
+                name: {{ $releaseName  }}
+          {{- with .Values.containerNginx.livenessProbe}}
+          livenessProbe:
+              {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.containerNginx.readinessProbe}}
+          readinessProbe:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+          {{- toYaml .Values.containerNginx.resources | nindent 12  }}
+          volumeMounts:
+            - name: nginx-config-volume
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+            - name: app-shared-files
+              mountPath: /app
+        - name: {{ .Values.containerPhp.name }}
+          {{- with .Values.containerPhp.securityContext }}
+          securityContext: {{- toYaml . | nindent 8 }}
+          {{- end }}
+          image: {{ .Values.containerPhp.image }}
+          imagePullPolicy: {{ .Values.containerPhp.imagePullPolicy }}
+          ports:
+            {{- toYaml .Values.containerPhp.ports | nindent 12 }}
+          envFrom:
+            - secretRef:
+                name: {{ $releaseName  }}
+          {{- with .Values.containerPhp.livenessProbe}}
+          livenessProbe:
+              {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.containerPhp.readinessProbe}}
+          readinessProbe:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+          {{- toYaml .Values.containerPhp.resources | nindent 12  }}
+          volumeMounts:
+            - name: laravel-storage
+              mountPath: /app/storage
+      volumes:
+      - name: nginx-config-volume
+        configMap:
+          name: {{ include "getReleaseName" . }}-nginx-config-map
+      - name: app-shared-files
+        emptyDir: {}
+      - name: laravel-storage
+        persistentVolumeClaim:
+          claimName: {{ include "getReleaseName" . }}-storage

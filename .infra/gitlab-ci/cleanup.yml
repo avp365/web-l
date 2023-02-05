@@ -1,0 +1,9 @@
+cleanup:
+  stage: cleanup
+  image:
+    name: docker/compose:1.29.2
+    entrypoint: [""]
+  script:
+    - cd .infra/test
+    - docker-compose -p "$CI_PROJECT_NAME"_"$CI_PIPELINE_ID" down
+  when: always

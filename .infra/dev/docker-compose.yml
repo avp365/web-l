@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+  nginx:
+    build:
+      context: ../config/local/nginx
+    container_name: "laravel-nginx"  
+    hostname: "laravel-nginx"
+    volumes:
+    - ../../:/app
+    ports:
+      - "80:80"
+    networks:
+    - service-network
+  php-fpm:
+    build:
+      context: ../config/local/php
+    container_name: "laravel-php"   
+    user: 1000:1000
+    volumes:
+     - ../../:/app
+    network_mode: service:nginx
+    env_file:
+      - ./.env
+networks:
+ service-network:
+   name: developer_service-net
+   driver: bridge  

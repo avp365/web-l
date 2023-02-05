@@ -1,0 +1,256 @@
+# Для DevOps
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: "admin-dv"
+
+podAnnotations: {}
+
+podSecurityContext:
+  #runAsUser: 33
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+
+imagePullSecrets: ""
+
+
+# Для разработчиков.
+
+## App
+
+app:
+  ### Название берется из релиза пример. Инциализируется во время сборки ci/cd
+  name: "webdev-default-name"
+  ### Скалирование. Реплики.
+  replicaCount: 2
+
+
+### Конфигурация контейнеров.
+containerNginx:
+    name: "container-nginx"
+    securityContext: {}
+    #ex. hub.open-broker.ru/webdev/go-project/dv:tag
+    image: nginx:1.7.9
+    imagePullPolicy: IfNotPresent
+    ports:
+    - name: http
+      containerPort: 80
+      protocol: TCP
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: http
+      initialDelaySeconds: 3
+      timeoutSeconds: 5
+      periodSeconds: 1
+      successThreshold: 1
+      failureThreshold: 2
+    readinessProbe:
+      httpGet:
+        path: /readyz
+        port: http
+      initialDelaySeconds: 3
+      periodSeconds: 5
+    resources:
+      limits:
+        cpu: 100m
+        memory: 128Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+
+containerPhp:
+    name: "container-php"
+    securityContext: {}
+    # инциализируется во время сборки ci/cd
+    image: ""
+    imagePullPolicy: IfNotPresent
+    resources:
+      limits:
+        cpu: 100m
+        memory: 128Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+
+### Конфигурация nginx-php
+nginx:
+  conf: |
+      events {
+
+      }
+      http {
+        server {
+          listen 80 default_server;
+          listen [::]:80 default_server;
+
+          index index.php;
+
+          server_name _;
+          root /app/public;
+
+          location / {
+            try_files $uri $uri/ /index.php?$args;
+          }
+          location ~ \.php$ {
+            include fastcgi_params;
+            fastcgi_index index.php;
+            fastcgi_param REQUEST_METHOD $request_method;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            fastcgi_pass 127.0.0.1:9000;
+          }
+        }
+      }
+
+### Конфигурация сервиса.
+
+service:
+    type: "ClusterIP"
+    services:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
+
+### Конфигурация Ingress.
+ingress:
+  enabled: true
+  className: ""
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    kubernetes.io/tls-acme: "true"
+  tls:
+    #- secretName: example.local-go-tls
+    - hosts:
+       - web-l.u25.local
+  hosts:
+    - host:  web-l.u25.local
+      paths:
+        - path: /
+          backend:
+            servicePort: 80
+
+
+
+
+## redis
+
+### Конфигурация контейнеров.
+
+containerRedis:
+    name: "container-redis"   
+    image: redis
+    imagePullPolicy: IfNotPresent
+    securityContext:
+       runAsUser: 1000     
+    ports:
+    - name: redis
+      containerPort: 6379
+      protocol: TCP      
+    livenessProbe:
+      exec:
+        command: ['redis-cli', 'ping']
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      successThreshold: 1
+      failureThreshold: 2
+    resources:
+      limits:
+        cpu: 100m
+        memory: 128Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+
+### Конфигурация сервиса. Два сервиса Headless и обычный.
+serviceRedis:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+      protocol: TCP
+
+
+### Настройки
+redis:
+  terminationGracePeriodSeconds: 10
+  replicaCount: 2
+  launchSh: |-
+    #!/bin/sh
+
+    if [ "${HOSTNAME}" = "${REDIS_HOSTNAME_MASTER}" ];
+    then
+       redis-server --requirepass ${REDIS_PASSWORD}
+    else
+       redis-server --slaveof ${REDIS_HOST_MASTER} 6379 --masterauth ${REDIS_PASSWORD} --requirepass ${REDIS_PASSWORD}
+    fi
+
+## env
+### env app
+env:
+  APP_NAME: Laravel
+  APP_ENV: local
+  APP_KEY: base64:nfbmE3vesHXTCjtQJY2M2bXB19Dch1o5u+eSr2Hjiek=
+  APP_DEBUG: true
+  APP_URL: http://localhost
+  LOG_CHANNEL: stack
+  DB_CONNECTION: mysql
+  DB_HOST: 192.168.0.150
+  DB_PORT: 3306
+  DB_DATABASE: laravel
+  DB_USERNAME: root
+  DB_PASSWORD: 123456
+  BROADCAST_DRIVER: log
+  CACHE_DRIVER: file
+  QUEUE_CONNECTION: sync
+  SESSION_DRIVER: cookie
+  SESSION_LIFETIME: 120
+  MAIL_DRIVER: smtp
+  MAIL_HOST: mtp.mailtrap.io
+  MAIL_PORT: 2525
+  MAIL_USERNAME: null
+  MAIL_PASSWORD: null
+  MAIL_ENCRYPTION: null
+  AWS_ACCESS_KEY_ID: ""
+  AWS_SECRET_ACCESS_KEY: ""
+  AWS_DEFAULT_REGION: us-east-1
+  AWS_BUCKET: ""
+  PUSHER_APP_ID: ""
+  PUSHER_APP_KEY: ""
+  PUSHER_APP_SECRET: ""
+  PUSHER_APP_CLUSTER: mt1
+  MIX_PUSHER_APP_KEY: "${PUSHER_APP_KEY}"
+  MIX_PUSHER_APP_CLUSTER: "${PUSHER_APP_CLUSTER}"
+  #env инициализируются автоматически при деплое. Пароль и порт устанавливаются из envRedis.
+  #REDIS_HOST_MASTER: ""
+  #REDIS_HOST_SLAVE: ""
+  #REDIS_PASSWORD: ""
+  #REDIS_PORT: ""
+
+### env redis
+envRedis:
+  #env инициализируются автоматически при деплое. Пример.
+  #REDIS_HOST_MASTER: redis-app-0.redis-hsrv
+  #REDIS_HOST_SLAVE: redis-app-read
+  #REDIS_HOSTNAME_MASTER: redis-app-0
+  REDIS_PASSWORD: 123456test
+  REDIS_PORT: 6379

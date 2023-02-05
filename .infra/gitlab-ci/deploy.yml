@@ -1,0 +1,24 @@
+deploy:
+  stage: deploy
+  image: ${HELM_IMAGE}
+  variables:
+    GIT_STRATEGY: none
+  script:
+    # Setup Kubeconfig
+    - export ENVIRONMENT=$CI_COMMIT_BRANCH
+    - export RELEASE_NAME=$CI_PROJECT_NAMESPACE-webcore-dv-$CI_PROJECT_NAME
+    - mkdir -p $HOME/.kube
+    - cat $KUBECONFIG > $HOME/.kube/config
+    - echo $HOME/.kube/config
+    - gpg --allow-secret-key-import --import $HELM_SECRET
+    # Deploy via Helm
+    - cd .infra/helm/chart
+    - helm secrets upgrade
+      ${RELEASE_NAME}
+      --namespace ${ENVIRONMENT}
+      --wait
+      --install
+      --set-string containerPhp.image=${PROJECT_IMAGE}
+      --values config/${ENVIRONMENT}/values.yaml
+      --values config/${ENVIRONMENT}/secrets.yaml
+      .
